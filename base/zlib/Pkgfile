@@ -6,9 +6,8 @@ name=zlib
 version=1.2.11
 release=1
 
-source=(http://www.zlib.net/zlib-$version.tar.gz)
+source=(http://www.zlib.net/zlib-$version.tar.xz)
 
-PKGMK_GROUPS=(devel man)
 
 build() {
 # Vérifier si necessaire de faire les verifs du bon fonctionnement de
