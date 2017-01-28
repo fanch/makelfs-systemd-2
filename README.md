@@ -57,7 +57,7 @@ Et on charge le nouvel environnement:
 source ~/.bash_profile
 
 Et pour finir on récupère la dernière version du git:
-git clone git://github.com/fanch/makelfs-systemd2.git makelfs
+git clone git://github.com/fanch/makelfs-systemd-2.git makelfs
 
 
 Le clonage commence:
