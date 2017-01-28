@@ -1,0 +1,6 @@
+ Warning
+
+Installing the package will override all files installed by D-Bus in LFS. It is critical that nothing uses D-Bus libraries or programs during the installation. The best way to ensure that these libraries are not being used is to run the installation in rescue mode. To switch to rescue mode, run the following command as the root user (from a TTY):
+
+systemctl start rescue.target
+

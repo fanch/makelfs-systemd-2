@@ -1,0 +1,9 @@
+name=wget
+version=1.18
+source=(http://ftp.gnu.org/gnu/wget/wget-$version.tar.xz)
+build() {
+cd $name-$version
+./configure --prefix=/tools \
+	--with-ssl=openssl
+make install-exec
+}

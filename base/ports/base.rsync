@@ -1,0 +1,3 @@
+host=nutyx.org
+collection=ports/nutyx/base/
+destination=/usr/ports/base

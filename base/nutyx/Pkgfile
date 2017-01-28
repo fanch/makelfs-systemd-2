@@ -1,0 +1,929 @@
+# Description: Base system of NuTyX, contains all folders and startup scripts.
+# URL: https://github.com/nutyx
+# Maintainer: tnut at nutyx dot org
+# Packager: tnut at nutyx dot org
+
+PKGMK_IGNORE_RUNTIMEDEPS=yes
+
+name=nutyx
+version=7.10
+release=1
+scripts=blfs-systemd-units
+scriptsversion=20160602
+source=(nu http://www.linuxfromscratch.org/blfs/downloads/systemd/blfs-systemd-units-20160602.tar.bz2)
+build() {
+mkdir $PKG/{dev,proc,sys,run}
+mknod -m 600 $PKG/dev/console c 5 1
+mknod -m 666 $PKG/dev/null c 1 3
+
+mkdir -pv $PKG/{bin,boot,etc/{opt,sysconfig,systemd/network,udev},home,lib/firmware,mnt,opt}
+mkdir -pv $PKG/{media/{floppy,cdrom},sbin,srv,var}
+install -dv -m 0750 $PKG/root
+install -dv -m 1777 $PKG/tmp $PKG/var/tmp
+mkdir -pv $PKG/usr/{,local/}{bin,include,lib,sbin,src}
+mkdir -pv $PKG/usr/{,local/}share/{color,dict,doc,info,locale,man}
+mkdir -v  $PKG/usr/{,local/}share/{misc,zoneinfo}
+mkdir -v  $PKG/usr/libexec
+mkdir -pv $PKG/usr/{,local/}share/man/man{1..8}
+
+for file in nu
+do
+	install -m755 $file $PKG/bin/$file
+done
+
+install --directory --mode=0755 --owner=root --group=root $PKG/etc/profile.d
+
+mkdir -pv $PKG/usr/ports/{base,cli,gui,personnel}
+
+mkdir $PKG/etc/{default,skel,modprobe.d}
+
+for dir in /usr /usr/local; do
+  ln -sv share/{man,doc,info} $PKG/$dir
+done
+case $(uname -m) in
+ x86_64) ln -sv lib $PKG/lib64
+         ln -sv lib $PKG/usr/lib64
+         ln -sv lib $PKG/usr/local/lib64 ;;
+esac
+
+mkdir -v  $PKG/usr/lib/{pkgconfig,systemd}
+mkdir -v $PKG/var/{log,mail,spool}
+ln -sv /run $PKG/var/run
+ln -sv /run/lock $PKG/var/lock
+mkdir -pv $PKG/var/{opt,cache,lib/{color,misc,locate,local,systemd}}
+mkdir -pv $PKG/var/lib/systemd/{backlight,catalog,coredump,rfkill}
+touch $PKG/etc/machine-id
+touch $PKG/var/lib/systemd/{clock,random-seed}
+touch $PKG/var/log/{btmp,lastlog,wtmp}
+chgrp -v utmp $PKG/var/log/lastlog
+chmod -v 664  $PKG/var/log/lastlog
+chmod -v 600  $PKG/var/log/btmp
+
+
+cat > $PKG/etc/profile.d/i18n.sh << "EOF"
+# Begin /etc/profile.d/i18n.sh
+unset LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES \
+      LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT LC_IDENTIFICATION
+
+if [ -z "$LANG" ]; then
+	if [ -n "$XDG_CONFIG_HOME" ] && [ -r "$XDG_CONFIG_HOME/locale.conf" ]; then
+  		. "$XDG_CONFIG_HOME/locale.conf"
+	elif [ -n $HOME ] && [ -r $HOME/.config/locale.conf ]; then
+  		. "$HOME/.config/locale.conf"
+	elif [ -r /etc/locale.conf ]; then
+  		. /etc/locale.conf
+	fi
+fi
+
+export LANG="${LANG:-C}"
+[ -n "$LC_CTYPE" ]          && export LC_CTYPE
+[ -n "$LC_NUMERIC" ]        && export LC_NUMERIC
+[ -n "$LC_TIME" ]           && export LC_TIME
+[ -n "$LC_COLLATE" ]        && export LC_COLLATE
+[ -n "$LC_MONETARY" ]       && export LC_MONETARY
+[ -n "$LC_MESSAGES" ]       && export LC_MESSAGES
+[ -n "$LC_PAPER" ]          && export LC_PAPER
+[ -n "$LC_NAME" ]           && export LC_NAME
+[ -n "$LC_ADDRESS" ]        && export LC_ADDRESS
+[ -n "$LC_TELEPHONE" ]      && export LC_TELEPHONE
+[ -n "$LC_MEASUREMENT" ]    && export LC_MEASUREMENT
+[ -n "$LC_IDENTIFICATION" ] && export LC_IDENTIFICATION
+
+# End /etc/profile.d/i18n.sh
+EOF
+
+cat > $PKG/etc/profile.d/extrapaths.sh << "EOF"
+if [ -d /usr/local/lib/pkgconfig ] ; then
+        pathappend /usr/local/lib/pkgconfig PKG_CONFIG_PATH
+fi
+if [ -d /usr/local/bin ]; then
+        pathprepend /usr/local/bin
+fi
+if [ -d /usr/local/sbin -a $EUID -eq 0 ]; then
+        pathprepend /usr/local/sbin
+fi
+
+if [ -d ~/bin ]; then
+        pathprepend ~/bin
+fi
+#if [ $EUID -gt 99 ]; then
+#        pathappend .
+#fi
+EOF
+
+cat > $PKG/etc/profile.d/dircolors.sh << "EOF"
+# Setup for /bin/ls to support color, the alias is in /etc/bashrc.
+if [ -f "/etc/dircolors" ] ; then
+        eval $(dircolors -b /etc/dircolors)
+
+        if [ -f "$HOME/.dircolors" ] ; then
+                eval $(dircolors -b $HOME/.dircolors)
+        fi
+fi
+alias ls='ls --color=auto'
+EOF
+
+cat > $PKG/etc/profile << "EOF"
+# Begin /etc/profile
+# Written for Beyond Linux From Scratch
+# by James Robertson <jameswrobertson@earthlink.net>
+# modifications by Dagmar d'Surreal <rivyqntzne@pbzpnfg.arg>
+
+# System wide environment variables and startup programs.
+
+# System wide aliases and functions should go in /etc/bashrc.  Personal
+# environment variables and startup programs should go into
+# ~/.bash_profile.  Personal aliases and functions should go into
+# ~/.bashrc.
+
+# Functions to help us manage paths.  Second argument is the name of the
+# path variable to be modified (default: PATH)
+pathremove () {
+        local IFS=':'
+        local NEWPATH
+        local DIR
+        local PATHVARIABLE=${2:-PATH}
+        for DIR in ${!PATHVARIABLE} ; do
+                if [ "$DIR" != "$1" ] ; then
+                  NEWPATH=${NEWPATH:+$NEWPATH:}$DIR
+                fi
+        done
+        export $PATHVARIABLE="$NEWPATH"
+}
+
+pathprepend () {
+        pathremove $1 $2
+        local PATHVARIABLE=${2:-PATH}
+        export $PATHVARIABLE="$1${!PATHVARIABLE:+:${!PATHVARIABLE}}"
+}
+
+pathappend () {
+        pathremove $1 $2
+        local PATHVARIABLE=${2:-PATH}
+        export $PATHVARIABLE="${!PATHVARIABLE:+${!PATHVARIABLE}:}$1"
+}
+
+export -f pathremove pathprepend pathappend
+
+# Set the initial path
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+if [ $EUID -eq 0 ] ; then
+        unset HISTFILE
+fi
+
+# Setup some environment variables.
+export HISTSIZE=1000
+export HISTIGNORE="&:[bf]g:exit"
+
+# Set some defaults for graphical systems
+export XDG_DATA_DIRS=/usr/share/
+export XDG_CONFIG_DIRS=/etc/xdg/
+
+# Setup a red prompt for root and a green one for users.
+NORMAL="\[\e[0m\]"
+RED="\[\e[1;31m\]"
+GREEN="\[\e[1;32m\]"
+if [[ $EUID == 0 ]] ; then
+  PS1="$RED\u [ $NORMAL\w$RED ]# $NORMAL"
+else
+  PS1="$GREEN\u [ $NORMAL\w$GREEN ]\$ $NORMAL"
+fi
+
+for script in /etc/profile.d/*.sh ; do
+        if [ -r $script ] ; then
+                . $script
+        fi
+done
+
+unset script RED GREEN NORMAL
+
+# End /etc/profile
+EOF
+
+cat > $PKG/etc/group << "EOF"
+root:x:0:
+bin:x:1:
+sys:x:2:
+kmem:x:3:
+tape:x:4:
+tty:x:5:
+daemon:x:6:
+floppy:x:7:
+disk:x:8:
+lp:x:9:
+dialout:x:10:
+audio:x:11:gdm
+video:x:12:gdm
+utmp:x:13:
+usb:x:14:
+cdrom:x:15:
+adm:x:16:
+atd:x:17:
+messagebus:x:18:
+lpadmin:x:19:
+named:x:20:
+gdm:x:21:
+fcron:x:22:
+systemd-journal:x:23:
+www:x:24:
+apache:x:25:
+smmsp:x:26:
+polkitd:x:27:
+wheel:x:30:root
+exim:x:31:
+postfix:x:32:
+postdrop:x:33:
+mail:x:34:
+vmailman:x:35:
+news:x:36:
+kdm:x:37:
+mysql:x:40:
+postgres:x:41:
+dovecot:x:42:
+dovenull:x:43:
+ftp:x:45:
+proftpd:x:46:
+vsftpd:x:47:
+rsyncd:x:48:
+sshd:x:50:
+stunnel:x:51:
+svn:x:56:
+svntest:x:57:
+pulse:x:58:
+pulse-access:x:59:
+games:x:60:
+kvm:x:61:
+wireshark:x:62:
+lightdm:x:63:
+sddm:x:64:
+scanner:x:70:
+colord:x:71:
+systemd-bus-proxy:x:72:
+systemd-journal-gateway:x:73:
+systemd-journal-remote:x:74:
+systemd-journal-upload:x:75:
+systemd-network:x:76:
+systemd-resolve:x:77:
+systemd-timesync:x:78:
+systemd-coredump:x:79:
+vboxusers:x:80:
+ldap:x:83:
+avahi:x:84:
+avahi-autoipd:x:85:
+netdev:x:86:
+ntp:x:87:
+unbound:x:88:
+nogroup:x:99:
+users:x:999:
+EOF
+
+cat > $PKG/etc/passwd << "EOF"
+root::0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/dev/null:/bin/false
+daemon:x:6:6:Daemon User:/dev/null:/bin/false
+lp:x:9:9:Print Service User:/dev/null:/bin/false
+atd:x:17:17:add daemon:/dev/null:/bin/false
+messagebus:x:18:18:D-Bus Message Daemon User:/dev/null:/bin/false
+named:x:20:20:BIND Owner:/home/named:/bin/false
+gdm:x:21:21:GDM Daemon User:/var/lib/gdm:/bin/false
+fcron:x:22:22:Fcron User:/dev/null:/bin/false
+www:x:24:24:Nginx Server:/dev/null:bin/false
+apache:x:25:25:Apache Server:/dev/null:/bin/false
+smmsp:x:26:26:Sendmail Daemon:/dev/null:/bin/false
+polkitd:x:27:27:Policy Kit Daemon User:/etc/polkit-1:/bin/false
+exim:x:31:31:Exim Daemon:/dev/null:/bin/false
+postfix:x:32:32:Postfix Daemon User:/var/spool/postfix:/bin/false
+sendmail:x:34:34:Sendmail Daemon:/dev/null:/bin/false
+vmailman:x:35:35:Vmail Daemon:/dev/null:/bin/false
+news:x:36:36:News Daemon:/dev/null:/bin/false
+kdm:x:37:37:KDM Daemon Owner:/var/lib/kdm:/bin/false
+mysql:x:40:40:MySQL Server:/dev/null:/bin/false
+postgres:x:41:41:PostgreSQL Server:/srv/pgsql/data:/bin/bash
+dovecot:x:42:42:Dovecot unprivileged user:/dev/null:/bin/false
+dovenull:x:43:43:Dovecot login user:/dev/null:/bin/false
+ftp:x:45:45:anonymous_user:/home/ftp:/bin/false
+proftpd:x:46:46:proftpd:/srv/ftp:/usr/bin/proftpdshell
+vsftpd:x:47:47:vsftpd User:/dev/null:/bin/false
+rsyncd:x:48:48:rsyncd Daemon:/home/rsync:/bin/false
+sshd:x:50:50:sshd PrivSep:/var/lib/sshd:/bin/false
+stunnel:x:51:51:stunnel Daemon:/var/lib/stunnel:/bin/false
+svn:x:56:56:SVN Owner:/home/svn:/bin/false
+games:x:60:60:Games High Score Owner:/var/games:/bin/false
+lightdm:x:63:63:Light Display Manager:/var/lib/lightdm:/sbin/nologin
+sddm:x:64:64:Simple Desktop Display Manager:/var/lib/sddm:/bin/false
+colord:x:71:71:Color Daemon Owner:/var/lib/colord:/bin/false
+systemd-bus-proxy:x:72:72:systemd Bus Proxy:/:/bin/false
+systemd-journal-gateway:x:73:73:systemd Journal Gateway:/:/bin/false
+systemd-journal-remote:x:74:74:systemd Journal Remote:/:/bin/false
+systemd-journal-upload:x:75:75:systemd Journal Upload:/:/bin/false
+systemd-network:x:76:76:systemd Network Management:/:/bin/false
+systemd-resolve:x:77:77:systemd Resolver:/:/bin/false
+systemd-timesync:x:78:78:systemd Time Synchronization:/:/bin/false
+systemd-coredump:x:79:79:systemd Core Dumper:/:/bin/false
+ldap:x:83:83:OpenLDAP Daemon Owner:/var/lib/openldap:/bin/false
+avahi:x:84:84:Avahi Daemon Owner:/var/run/avahi-daemon:/bin/false
+avahi-autoipd:x:85:85:Avahi autoip Daemon:/:/var/run/avahi-autoipd:/bin/false
+ntp:x:87:87:Network Time Protocol:/var/lib/ntp:/bin/false
+unbound:x:88:88:Unbound DNS resolver:/var/lib/unbound:/bin/false
+anonymous:x:98:99:Unprivileged User:/dev/null:/bin/false
+nobody:x:99:99:Unprivileged User:/dev/null:/bin/false
+EOF
+
+cat > $PKG/etc/profile.d/xorg.sh << "EOF"
+XORG_PREFIX="/usr"
+XORG_CONFIG="--prefix=$XORG_PREFIX \
+             --sysconfdir=/etc \
+             --mandir=$XORG_PREFIX/share/man \
+             --localstatedir=/var"
+export XORG_PREFIX XORG_CONFIG
+EOF
+
+ln -sv /usr/lib/os-release $PKG/etc/os-release
+
+ln -sv /usr/share/zoneinfo/UTC $PKG/etc/localtime
+
+ln -sv /proc/self/mounts $PKG/etc/mtab
+
+cat > $PKG/etc/fstab << "EOF"
+# Begin /etc/fstab
+
+# file system  mount-point  type     options             dump  fsck
+#                                                              order
+# Exemple de montage nfs
+# 192.168.254.254:/home/thierry /home/thierry nfs rw,vers=3,_netdev,rsize=8192,wsize=8192 0 0
+
+proc           /proc        proc     nosuid,noexec,nodev 0     0
+sysfs          /sys         sysfs    nosuid,noexec,nodev 0     0
+devpts         /dev/pts     devpts   gid=5,mode=620      0     0
+tmpfs		   /tmp	        tmpfs	 nodev,nosuid	     0	   0
+devtmpfs       /dev         devtmpfs mode=0755,nosuid    0     0
+EOF
+
+cat > $PKG/etc/sysconfig/rc.site << "EOF"
+# rc.site                                                                            
+# Optional parameters for boot scripts.
+
+# Distro Information
+# These values, if specified here, override the defaults
+#DISTRO="Linux From Scratch" # The distro name
+#DISTRO_CONTACT="lfs-dev@linuxfromscratch.org" # Bug report address
+#DISTRO_MINI="LFS" # Short name used in filenames for distro config
+
+# Define custom colors used in messages printed to the screen
+
+# Please consult `man console_codes` for more information
+# under the "ECMA-48 Set Graphics Rendition" section
+#
+# Warning: when switching from a 8bit to a 9bit font,
+# the linux console will reinterpret the bold (1;) to
+# the top 256 glyphs of the 9bit font.  This does
+# not affect framebuffer consoles
+
+# These values, if specified here, override the defaults
+#BRACKET="\\033[1;34m" # Blue
+#FAILURE="\\033[1;31m" # Red
+#INFO="\\033[1;36m"    # Cyan
+#NORMAL="\\033[0;39m"  # Grey
+#SUCCESS="\\033[1;32m" # Green
+#WARNING="\\033[1;33m" # Yellow
+
+# Use a colored prefix
+# These values, if specified here, override the defaults
+#BMPREFIX="     "
+#SUCCESS_PREFIX="${SUCCESS}  *  ${NORMAL}"
+#FAILURE_PREFIX="${FAILURE}*****${NORMAL}"
+#WARNING_PREFIX="${WARNING} *** ${NORMAL}"
+
+# Interactive startup
+#IPROMPT="yes" # Whether to display the interactive boot prompt
+#itime="3"    # The amount of time (in seconds) to display the prompt
+
+# The total length of the distro welcome string, without escape codes
+#wlen=$(echo "Welcome to ${DISTRO}" | wc -c )
+#welcome_message="Welcome to ${INFO}${DISTRO}${NORMAL}"
+
+# The total length of the interactive string, without escape codes
+#ilen=$(echo "Press 'I' to enter interactive startup" | wc -c )
+#i_message="Press '${FAILURE}I${NORMAL}' to enter interactive startup"
+
+# Set scripts to skip the file system check on reboot
+#FASTBOOT=yes
+
+# Skip reading from the console
+#HEADLESS=yes
+
+# Write out fsck progress if yes
+#VERBOSE_FSCK=no
+
+# Speed up boot without waiting for settle in udev
+#OMIT_UDEV_SETTLE=y
+
+# Speed up boot without waiting for settle in udev_retry
+#OMIT_UDEV_RETRY_SETTLE=yes
+
+# Skip cleaning /tmp if yes
+#SKIPTMPCLEAN=no
+
+# For setclock
+#UTC=1
+#CLOCKPARAMS=
+
+# For consolelog
+#LOGLEVEL=5
+
+# For network
+#HOSTNAME=mylfs
+
+# Delay between TERM and KILL signals at shutdown
+#KILLDELAY=3
+
+# Optional sysklogd parameters
+#SYSKLOGD_PARMS="-m 0"
+
+# Console parameters
+#UNICODE=1
+#KEYMAP="fr-latin9"
+#KEYMAP_CORRECTIONS="euro2"
+#FONT="lat0-16 -m 8859-15"
+#LEGACY_CHARSET=
+EOF
+
+cat > $PKG/etc/sysconfig/console << "EOF"
+FONT="Lat2-Terminus16"
+UNICODE="1"
+LOGLEVEL=1
+KEYMAP=fr-latin9.map
+EOF
+
+cat > $PKG/etc/sysconfig/udev_retry << "EOF"
+########################################################################
+# Begin /etc/sysconfig/udev_retry
+#
+# Description : udev_retry script configuration
+#
+# Authors     :
+#
+# Version     : 00.00
+#
+# Notes       : Each subsystem that may need to be re-triggered after mountfs
+#               runs should be listed in this file.  Probable subsystems to be
+#               listed here are rtc (due to /var/lib/hwclock/adjtime) and sound
+#               (due to both /var/lib/alsa/asound.state and /usr/sbin/alsactl).
+#               Entries are whitespace-separated.
+########################################################################
+
+rtc
+
+# End /etc/sysconfig/udev_retry
+EOF
+
+cat > $PKG/etc/sysconfig/createfiles << "EOF"
+########################################################################
+# Begin /etc/sysconfig/createfiles
+#
+# Description : Createfiles script config file
+#
+# Authors     :
+#
+# Version     : 00.00
+#
+# Notes       : The syntax of this file is as follows:
+# 		if type is equal to "file" or "dir"
+#  		<filename> <type> <permissions> <user> <group>
+# 		if type is equal to "dev"
+#  		<filename> <type> <permissions> <user> <group> <devtype> 
+#             <major> <minor>
+#
+# 		<filename> is the name of the file which is to be created
+# 		<type> is either file, dir, or dev.
+#   			file creates a new file
+#   			dir creates a new directory
+#   			dev creates a new device
+# 		<devtype> is either block, char or pipe
+#   			block creates a block device
+#   			char creates a character deivce
+#   			pipe creates a pipe, this will ignore the <major> and 
+#           <minor> fields
+# 		<major> and <minor> are the major and minor numbers used for 
+#     the device.
+########################################################################
+
+# End /etc/sysconfig/createfiles
+EOF
+
+cat > $PKG/etc/sysconfig/modules << "EOF"
+########################################################################
+# Begin /etc/sysconfig/modules
+#
+# Description : Module auto-loading configuration
+#
+# Authors     :
+#
+# Version     : 00.00
+#
+# Notes       : The syntax of this file is as follows:
+#  		<module> [<arg1> <arg2> ...]
+#
+# Each module should be on its own line, and any options that you want
+# passed to the module should follow it.  The line deliminator is either
+# a space or a tab.
+########################################################################
+
+# End /etc/sysconfig/modules
+EOF
+
+cat > $PKG/etc/sysconfig/mouse << "EOF"
+MDEVICE="/dev/input/mice"
+PROTOCOL="imps2"
+EOF
+
+cat > $PKG/etc/adjtime << "EOF"
+0.0 0 0.0
+0
+LOCAL
+EOF
+
+cat > $PKG/etc/locale.conf << "EOF"
+# Begin /etc/locale.conf
+#LANG=cs_CZ.utf8
+#LANG=de_DE.utf8
+#LANG=en_GB.utf8
+#LANG=en_HK.utf8
+#LANG=en_PH.utf8
+#LANG=en_US.utf8
+#LANG=es_MX.utf8
+#LANG=fa_IR/utf8 
+LANG=fr_FR.utf8
+#LANG=it_CH.utf8
+#LANG=it_IT.utf8
+#LANG=ja_JP.EUC-JP
+#LANG=ru_RU/utf8 
+#LANG=tr_TR.utf8
+#LANG=zh_CN.GB18030
+# End /etc/locale.conf
+EOF
+
+cat > $PKG/etc/vconsole.conf << "EOF"
+KEYMAP=fr-latin9
+FONT=lat9w-16 
+FONT_MAP=8859-1_to_uni
+EOF
+
+cat > $PKG/etc/lfs-release << "EOF"
+7.10-systemd
+EOF
+
+cat > $PKG/etc/hosts << "EOF"
+# Begin /etc/hosts
+
+127.0.0.1 localhost.localdomain localhost
+127.0.0.1 nutyx
+
+# End /etc/hosts
+EOF
+
+cat > $PKG/etc/systemd/network/10-eno1-dhcp.network << "EOF"
+[Match]
+Name=eno1
+
+[Network]
+DHCP=ipv4
+
+[DHCP]
+UseDomains=true
+EOF
+
+
+cat > $PKG/etc/systemd/network/10-eno1-static.network << "EOF"
+[Match]
+Name=eno1
+
+[Network]
+Address=192.168.0.2/24
+Gateway=192.168.0.1
+DNS=192.168.0.1
+Domains=
+EOF
+
+cat > $PKG/etc/resolv.conf << EOF
+# Begin /etc/resolv.conf
+
+domain $DOMAIN_NAME
+
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+
+# End /etc/resolv.conf
+EOF
+
+cat > $PKG/etc/shells << "EOF"
+# Begin /etc/shells
+
+/bin/sh
+/bin/bash
+
+# End /etc/shells
+EOF
+
+cat > $PKG/etc/profile.d/umask.sh << "EOF"
+# By default we want the umask to get set.
+if [ "$(id -gn)" = "$(id -un)" -a $EUID -gt 99 ] ; then
+  umask 002
+else
+  umask 022
+fi
+EOF
+
+cat > $PKG/etc/bashrc << "EOF"
+# Begin /etc/bashrc
+# Written for Beyond Linux From Scratch
+# by James Robertson <jameswrobertson@earthlink.net>
+# updated by Bruce Dubbs <bdubbs@linuxfromscratch.org>
+
+# System wide aliases and functions.
+
+# System wide environment variables and startup programs should go into
+# /etc/profile.  Personal environment variables and startup programs
+# should go into ~/.bash_profile.  Personal aliases and functions should
+# go into ~/.bashrc
+
+# Provides a colored /bin/ls command.  Used in conjunction with code in
+# /etc/profile.
+
+alias ls='ls --color=auto'
+
+# Provides prompt for non-login shells, specifically shells started
+# in the X environment. [Review the LFS archive thread titled
+# PS1 Environment Variable for a great case study behind this script
+# addendum.]
+
+NORMAL="\[\e[0m\]"
+RED="\[\e[1;31m\]"
+GREEN="\[\e[1;32m\]"
+WHITE="\[\e[1;37m\]"
+INFOMACHINE="`date +%H:%M` `uname -m` `uname -r` `whoami`@`uname -n`"
+prompt_command() {
+# Sauvegarde de la pos courante
+tput sc
+# Calcul de la largeur
+let backwash=$(tput cols)-$(echo $INFOMACHINE | wc -m)-2
+# Pos des curseurs à la position Y=0, X=longueur calculée
+tput cup 0 ${backwash}
+# Spécifie la couleur et la casse de la police
+tput setaf 4; tput bold
+# Affiche le chemin entre crochets
+echo -n "["
+# Specifie la couleur du chemin
+tput setaf 6
+# Affiche le chemin complet
+echo -n "$INFOMACHINE"
+tput setaf 4; tput bold
+# Affiche le crochet fermé
+echo -n "]"
+# Remet le curseur à sa place
+tput rc
+}
+
+PROMPT_COMMAND=prompt_command
+
+case $TERM in
+        xterm|rxvt*)
+                TITLEBAR='\[\033]0;\u@\h \007\]'
+                ;;
+        *)
+                TITLEBAR=''
+                ;;
+esac
+
+if [[ $EUID == 0 ]] ; then
+  PS1="$TITLEBAR$RED\u [ $NORMAL\w$RED ]# $NORMAL"
+else
+  PS1="$TITLEBAR$GREEN\u [ $NORMAL\w$GREEN ]\$ $NORMAL"
+fi
+# End /etc/bashrc
+EOF
+
+cat > $PKG/etc/profile.d/readline.sh << "EOF"
+# Setup the INPUTRC environment variable.
+if [ -z "$INPUTRC" -a ! -f "$HOME/.inputrc" ] ; then
+        INPUTRC=/etc/inputrc
+fi
+export INPUTRC
+EOF
+
+cat > $PKG/etc/inputrc << "EOF"
+# Begin /etc/inputrc
+# Modified by Chris Lynn <roryo@roryo.dynup.net>
+
+# Allow the command prompt to wrap to the next line
+set horizontal-scroll-mode Off
+
+# Enable 8bit input
+set meta-flag On
+set input-meta On
+
+# Turns off 8th bit stripping
+set convert-meta Off
+
+# Keep the 8th bit for display
+set output-meta On
+
+# none, visible or audible
+set bell-style none
+
+# All of the following map the escape sequence of the value
+# contained in the 1st argument to the readline specific functions
+"\eOd": backward-word
+"\eOc": forward-word
+
+# for linux console
+"\e[1~": beginning-of-line
+"\e[4~": end-of-line
+"\e[5~": beginning-of-history
+"\e[6~": end-of-history
+"\e[3~": delete-char
+"\e[2~": quoted-insert
+
+# for xterm
+"\eOH": beginning-of-line
+"\eOF": end-of-line
+
+# for Konsole
+"\e[H": beginning-of-line
+"\e[F": end-of-line
+
+# End /etc/inputrc
+EOF
+
+cat > $PKG/usr/bin/which << "EOF"
+#!/bin/bash
+type -pa "$@" | head -n 1 ; exit ${PIPESTATUS[0]}
+EOF
+chmod -v 755 $PKG/usr/bin/which
+chown -v root:root $PKG/usr/bin/which
+	
+cat > $PKG/etc/skel/.bashrc << "EOF"
+# Personal aliases and functions.
+
+# Personal environment variables and startup programs should go in
+# ~/.bash_profile.  System wide environment variables and startup
+# programs are in /etc/profile.  System wide aliases and functions are
+# in /etc/bashrc.
+
+if [ -f "/etc/bashrc" ] ; then
+  source /etc/bashrc
+fi
+if [ $EUID -eq 0 ] ; then
+	alias del='pkg-get remove'
+	alias get='pkg-get depinst'
+	alias up='pkg-get update -r'
+	alias check='pkg-get sync;pkg-get diff'
+else
+	alias del='sudo pkg-get remove'
+	alias get='sudo pkg-get depinst'
+	alias up='sudo pkg-get update -r'
+	alias check='sudo pkg-get sync;sudo pkg-get diff'
+fi
+alias ll='ls -l'
+alias l='ls -alh'
+alias duh='du -h --max-depth=1'
+alias dfh='df -h'
+alias pkgfind='pkginfo -i | grep -i'
+alias search='pkg-get dsearch'
+# End ~/.bashrc
+EOF
+cat > $PKG/etc/skel/.bash_profile << "EOF"
+# Personal environment variables and startup programs.
+
+# Personal aliases and functions should go in ~/.bashrc.  System wide
+# environment variables and startup programs are in /etc/profile.
+# System wide aliases and functions are in /etc/bashrc.
+
+append () {
+  # First remove the directory
+  local IFS=':'
+  local NEWPATH
+  for DIR in $PATH; do
+     if [ "$DIR" != "$1" ]; then
+       NEWPATH=${NEWPATH:+$NEWPATH:}$DIR
+     fi
+  done
+  # Then append the directory
+  export PATH=$NEWPATH:$1
+}
+
+if [ -f "$HOME/.bashrc" ] ; then
+  source $HOME/.bashrc
+fi
+
+# unset append
+
+# End ~/.bash_profile
+EOF
+cat > $PKG/etc/skel/.dmrc << "EOF"
+[Desktop]
+Session=LXDE
+EOF
+install -m600 $PKG/etc/skel/.bashrc $PKG/root/.bashrc
+install -m600 $PKG/etc/skel/.bash_profile $PKG/root/.bash_profile
+
+cat > $PKG/etc/modprobe.d/usb.conf << "EOF"
+# Begin /etc/modprobe.d/usb.conf
+install ohci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i ohci_hcd ; true
+install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
+# End /etc/modprobe.d/usb.conf
+EOF
+
+cat > $PKG//etc/nsswitch.conf  << "EOF"
+#
+# /etc/nsswitch.conf
+
+passwd: files
+group: files
+shadow: files
+
+publickey: files
+
+hosts: files dns
+networks: files
+
+protocols: files
+services: files
+ethers: files
+rpc: files
+
+netgroup: files
+EOF
+
+cat > $PKG/sbin/flushmen << "EOF"
+echo "Syncro DD"
+sync
+echo "Patientez svp ..."
+sleep 3
+echo "Vider la mémoire"
+echo 3 > /proc/sys/vm/drop_caches
+EOF
+
+cat > $PKG/etc/blfs-systemd-units << "EOF"
+scripts=blfs-systemd-units
+EOF
+echo "scriptsversion=$scriptsversion" >> $PKG/etc/blfs-systemd-units
+
+mkdir -pv $PKG/etc/systemd/system/getty@tty1.service.d
+
+cat > $PKG/etc/systemd/system/getty@tty1.service.d/noclear.conf << EOF
+[Service]
+TTYVTDisallocate=no
+EOF
+
+ln -sfv /dev/null $PKG/etc/systemd/system/tmp.mount
+
+mkdir -pv $PKG/etc/systemd/system/foobar.service.d
+
+cat > $PKG/etc/systemd/system/foobar.service.d/foobar.conf << EOF
+[Service]
+Restart=always
+RestartSec=30
+EOF
+
+mkdir -pv $PKG/srv/NuTyX/release
+
+# X11 bug
+mkdir -p $PKG/etc/X11/xorg.conf.d
+ln -sv /usr/share/X11/xorg.conf.d/50-synaptics.conf $PKG/etc/X11/xorg.conf.d/50-synaptics.conf
+cat > $PKG/etc/X11/xorg.conf.d/15.quirks.conf << "EOF"
+Section "InputClass"
+        Identifier "no need Accelerometer in X"
+        MatchProduct "Accelerometer"
+        Option "Ignore" "on"
+EndSection
+Section "InputClass"
+        Identifier "no need accelerometer in X"
+        MatchProduct "accelerometer"
+        Option "Ignore" "on"
+EndSection
+EOF
+
+cat > $PKG/etc/X11/xorg.conf.d/20-keyboard.conf << "EOF"
+Section "InputClass"
+  Identifier "Generic Keyboard"
+  MatchIsKeyboard "yes"
+  Option "XkbLayout" "fr"
+EndSection
+EOF
+
+# Usefull links
+cd $PKG/root/
+ln -s ../etc/fstab
+ln -s ../boot/grub/grub.cfg
+ln -s ../etc/profile.d
+ln -s ../etc/modprobe.d
+ln -s ../etc/systemd
+ln -s ../etc/sysconfig/console
+ln -s ../etc/bashrc
+ln -s ../etc/prt-get.conf
+ln -s ../etc/pkgadd.conf
+ln -s ../etc/pkgmk.conf
+cd -
+}

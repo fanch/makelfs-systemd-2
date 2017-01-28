@@ -1,0 +1,19 @@
+# Description: Utility for non-interactive download of files using HTTP, HTTPS and FTP.
+# URL: http://www.gnu.org/software/wget/
+# Packager: fanch at nutyx dot org
+
+name=wget
+version=1.18
+release=1
+
+source=(http://ftp.gnu.org/gnu/$name/$name-$version.tar.xz) 
+
+build() {
+cd $name-$version
+./configure --prefix=/usr \
+--sysconfdir=/etc \
+--with-ssl=openssl 
+make
+make DESTDIR=$PKG install
+rm -rf $PKG/usr/share/info/dir
+}

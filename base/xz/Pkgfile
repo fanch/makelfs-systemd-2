@@ -1,0 +1,25 @@
+# Description: Free general-purpose data compression software with high compression ratio.
+# URL: http://tukaani.org/xz/
+# Maintainer: Lasse Collin, lasse dot collin at tukaani dot org
+# Packager: tnut at nutyx dot org
+
+name=xz
+version=5.2.3
+release=1
+
+source=(http://tukaani.org/xz/xz-$version.tar.xz)
+build()
+{
+cd xz-$version
+
+./configure --prefix=/usr \
+--bindir=/bin \
+ --docdir=/usr/share/doc/xz-$version
+make
+make pkgconfigdir=/usr/lib/pkgconfig DESTDIR=$PKG install
+mkdir -pv $PKG/{,usr/}lib
+mv -v $PKG/usr/lib/liblzma.so.* \
+$PKG/lib
+ln -svf ../../lib/liblzma.so.$version $PKG/usr/lib/liblzma.so
+}
+

@@ -1,0 +1,25 @@
+# Description: L'outil pour la production des paquets binaires pour NuTyX
+# URL: http://www.nutyx.org
+# Maintainer: kiao.no-ip.info/NuTyX/git/?p=pkgmk;a=summary
+# Packager: thierryn1 at hispeed dot ch
+# Depends on: pkg-get
+# Run on:
+
+name=pkgmk
+version=0.0.3
+release=1
+source=($name-tools-$version.tar.gz)
+
+build()
+{
+	ARCH_=`uname -m`
+
+	cd $name-tools-$version
+	make
+	make DESTDIR=$PKG install
+	if [ "$ARCH_" == "x86_64" ]; then
+		sed -i "s/i686/x86_64/" $PKG/usr/bin/pkg-repgen
+	fi
+	echo 'PKGMK_IGNORE_FOOTPRINT="yes"' >> $PKG/etc/pkgmk.conf
+	echo 'PKGMK_IGNORE_MD5SUM="yes"' >> $PKG/etc/pkgmk.conf
+}

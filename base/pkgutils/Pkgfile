@@ -1,0 +1,36 @@
+# Description: A set of utilities to manage software packages
+# URL:         http://www.fukt.bsnet.se/~per/pkgutils/
+# Maintainer:  NuTyX core team
+# Packager: thierryn1 at hispeed dot ch
+# Depends on:  libarchive
+
+name=pkgutils
+version=5.36
+release=1
+source=(http://crux.nu/files/$name-$version.tar.xz
+	pkgmk pkgmk.8.fr.in pkgmk.8.in pkgmk.conf
+	pkgmk.conf.5.in pkgmk.conf.5.fr.in pkgadd.conf)
+build () {
+unset MAKEFLAGS
+cd $name-$version
+make DESTDIR=$PKG install
+mkdir $PKG/usr/share
+mv $PKG/usr/man	$PKG/usr/share/man
+rm $PKG/etc/pkgmk.conf
+if [ -f /tools/etc/pkgmk.conf ]; then
+	cp /tools/etc/pkgmk.conf $PKG/etc/pkgmk.conf
+else
+	cp $SRC/pkgmk.conf $PKG/etc/pkgmk.conf
+fi
+cp $SRC/pkgmk $PKG/usr/bin/pkgmk
+mkdir -p $PKG/usr/share/man/fr/man{5,8}
+
+cd $SRC
+# Config file
+cp pkgadd.conf $PKG/etc/pkgadd.conf
+# Man pages
+cp pkgmk.8.fr.in $PKG/usr/share/man/fr/man8/pkgmk.8
+cp pkgmk.8.in $PKG/usr/share/man/man8/pkgmk.8
+cp pkgmk.conf.5.fr.in $PKG/usr/share/man/fr/man5/pkgmk.conf.5
+cp pkgmk.conf.5.in $PKG/usr/share/man/man5/pkgmk.conf.5
+}

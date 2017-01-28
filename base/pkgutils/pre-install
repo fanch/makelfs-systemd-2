@@ -1,0 +1,4 @@
+if [ -f /etc/pkgmk.conf ]; then
+	cp /etc/pkgmk.conf{,.original}
+fi
+

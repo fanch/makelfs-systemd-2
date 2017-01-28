@@ -1,0 +1,45 @@
+# Description: Set of libraries that offers command-line editing and history capabilities.
+# URL: http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
+# Maintainer: Chet Ramey, chet dot ramey at case dot edu
+# Packager: pierre at nutyx dot org
+name=readline
+version=7.0
+release=1
+
+source=(http://ftp.gnu.org/gnu/readline/readline-$version.tar.gz)
+
+build()
+{
+cd readline-$version
+
+sed -i '/MV.*old/d' Makefile.in
+sed -i '/{OLDSUFF}/c:' support/shlib-install
+
+./configure --prefix=/usr \
+--docdir=/usr/share/doc/readline-$version
+
+make SHLIB_LIBS=-lncurses
+
+make DESTDIR=$PKG install
+
+mkdir -p $PKG/lib
+
+mv -v $PKG/usr/lib/lib{readline,history}.so.* \
+$PKG/lib
+
+rm -rf $PKG/usr/share/info/dir
+
+mkdir -p $PKG/usr/share/doc/readline-$version
+install -v -m644 doc/*.{ps,pdf,html,dvi} \
+$PKG/usr/share/doc/readline-$version
+
+rm -rv $PKG/usr/bin
+
+ln -sfv ../../lib/libreadline.so.7 \
+$PKG/usr/lib/libreadline.so
+
+ln -sfv ../../lib/libhistory.so.7 \
+$PKG/usr/lib/libhistory.so
+
+}
+

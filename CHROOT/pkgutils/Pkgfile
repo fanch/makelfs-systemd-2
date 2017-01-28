@@ -1,0 +1,19 @@
+# Description: A set of utilities to manage software packages 
+# URL: http://www.fukt.bsnet.se/~per/pkgutils/
+# Maintainer:  NuTyX core team
+# Packager: thierryn1 at hispeed dot ch
+# Depends on:  libarchive
+
+name=pkgutils
+version=5.36
+release=1
+source=(http://crux.nu/files/$name-$version.tar.xz)
+build () {
+cd $name-$version
+make DESTDIR=/tools install
+rm /tools/usr/bin/pkgmk
+rm /tools/etc/pkgmk.conf
+mv -v /tools/usr/bin/* /tools/bin/
+rm -r /tools/usr
+}
+

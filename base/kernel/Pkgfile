@@ -1,0 +1,82 @@
+# Description: The Linux kernel and modules
+# URL: http://www.kernel.org
+# Packagers: fanch at nutyx dot org
+
+PKGMK_IGNORE_UNPACK="yes"
+PKGMK_NO_STRIP="yes"
+
+name=kernel
+version=4.4.42
+release=1
+_version=${version%.*}
+
+source=(http://www.kernel.org/pub/linux/kernel/v4.x/linux-${_version}.tar.xz
+	http://www.kernel.org/pub/linux/kernel/v4.x/patch-$version.xz
+	config config_64 )
+
+build(){
+
+cd linux-${_version}
+
+if [ -f $SRC/patch-$version.xz ]; then
+	xz -d -c  $SRC/patch-$version.xz | patch -Np1
+fi
+
+make mrproper
+case `uname -m` in
+	x86_64)
+		cp $SRC/config_64 ./.config;;
+	i?86)
+		cp $SRC/config ./.config;
+esac
+
+# make menuconfig
+
+make || make -j1
+
+case `uname -m` in
+        x86_64)
+		cp .config $SRC/config_64;;
+        i?86)
+		cp .config $SRC/config;;
+esac
+
+# Install modules
+cd $SRC/linux-${_version}
+sed -i "/rm\ -rf\ \$(MODLIB)\/kernel/d" Makefile
+make INSTALL_MOD_PATH=$PKG modules_install || make -j1 INSTALL_MOD_PATH=$PKG modules_install
+mkdir -p $PKG/boot
+case `uname -m` in
+        x86_64)
+                cp  System.map \
+                $PKG/boot/System_64.map-$version
+                cp  .config    \
+                $PKG/boot/config_64-$version
+                cp  arch/x86_64/boot/bzImage \
+                $PKG/boot/$name-$version ;;
+        i?86)
+                cp  System.map \
+                $PKG/boot/System.map-$version
+                cp  .config \
+                $PKG/boot/config-$version
+                cp  arch/i386/boot/bzImage \
+                $PKG/boot/$name-$version ;;
+esac
+
+cd $PKG/lib/modules/${version}*/
+
+mkdir -p $PKG/usr/src
+
+mv $SRC/linux-${_version} $PKG/usr/src/
+rm {build,source}
+
+ln -sv /usr/src/linux-${_version} build
+ln -sv /usr/src/linux-${_version} source
+
+mkdir $SRC/linux-${_version}
+mv $PKG/usr/src/linux-${_version}/Documentation \
+$SRC/linux-${_version}
+
+# Firmware are in linux-firmware
+rm -rf $PKG/lib/firmware
+}

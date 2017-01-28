@@ -1,0 +1,23 @@
+# Description: Connect your computer to a network which uses DHCP to assign network addresses.
+# URL: http://roy.marples.name/projects/dhcpcd
+# Packager: fanch at nutyx dot org
+
+name=dhcpcd
+version=6.11.5
+release=1
+
+source=(http://roy.marples.name/downloads/$name/$name-$version.tar.xz)
+
+build() {
+    source /etc/blfs-systemd-units
+    wget http://www.linuxfromscratch.org/blfs/downloads/systemd/$scripts-$scriptsversion.tar.bz2
+    tar xvf $scripts-$scriptsversion.tar.bz2
+    cd $name-$version
+./configure --libexecdir=/lib/dhcpcd \
+            --dbdir=/var/lib/dhcpcd 
+make
+make DESTDIR=$PKG install
+
+cd $SRC/$scripts-$scriptsversion
+make DESTDIR=$PKG install-$name
+}

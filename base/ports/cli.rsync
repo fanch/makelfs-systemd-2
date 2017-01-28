@@ -1,0 +1,3 @@
+host=nutyx.org
+collection=ports/nutyx/cli/
+destination=/usr/ports/cli

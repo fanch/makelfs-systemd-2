@@ -1,0 +1,47 @@
+# Description: Give certain users (or groups) the ability to run some commands as root.
+# URL: http://www.sudo.ws
+# Packagers: fanch at nutyx dot org - systemd
+# Depends on: pam
+
+name=sudo
+version=1.8.17p1
+release=1
+
+source=(http://www.sudo.ws/sudo/dist/$name-$version.tar.gz)
+
+build() {
+cd $name-$version
+./configure --prefix=/usr              \
+            --libexecdir=/usr/lib      \
+            --with-secure-path         \
+            --with-all-insults         \
+            --with-env-editor          \
+            --docdir=/usr/share/doc/sudo-1.8.17p1 \
+            --with-passprompt="[sudo] password for %p"
+
+make
+make DESTDIR=$PKG install
+
+ln -sfv libsudo_util.so.0.0.0 $PKG/usr/lib/sudo/libsudo_util.so.0
+
+mkdir -pv $PKG/etc/pam.d
+
+cat > $PKG/etc/pam.d/sudo << "EOF" &&
+# Begin /etc/pam.d/sudo
+
+# include the default auth settings
+auth      include     system-auth
+
+# include the default account settings
+account   include     system-account
+
+# Set default environment variables for the service user
+session   required    pam_env.so
+
+# include system session defaults
+session   include     system-session
+
+# End /etc/pam.d/sudo
+EOF
+chmod 644 $PKG/etc/pam.d/sudo
+}

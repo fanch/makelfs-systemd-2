@@ -1,0 +1,19 @@
+# Description: Le gestionnaire de paquets binaires pour NuTyX léger et rapide
+# URL: http://www.nutyx.org
+# Maintainer: tnut at nutyx dot com
+# Packager: tnut at nutyx dot com
+# Depends on: curl
+
+name=pkg-get
+version=0.4.96
+release=1
+source=(http://nutyx.meticul.eu/files/$name-$version.tar.gz)
+
+build() {
+	unset MAKEFLAGS
+	cd $name-$version
+	make clean
+	make
+	make DESTDIR=$PKG install
+	rm $PKG/etc/pkg-get.conf
+}

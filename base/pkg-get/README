@@ -1,0 +1,3 @@
+Pour pouvoir compiler pkg-get il faut recompiler curl avec les options suivantes:
+./configure --prefix=/usr --without-ssl
+

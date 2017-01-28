@@ -1,0 +1,45 @@
+#!/bin/bash
+if [ -z "$LOG" ]; then
+   PASS=`pwd`
+   PASS=`basename $PASS`
+   LOG=$HOME/logs/$PASS
+fi
+if [ ! -d $LOG ]; then
+	mkdir -p $LOG
+fi
+
+error() {
+echo " Error produced in $i"
+exit 1
+}
+if [ ! -f list ];then 
+	LIST="$HOME/bin/list"
+else
+	LIST="list"
+fi
+for i in `cat $LIST`
+do
+   BUILD="yes"
+	if [ -f /tools/etc/pkgmk.conf ]; then
+		PKGMK="pkgmk -cf /tools/etc/pkgmk.conf"
+	else
+		PKGMK="pkgmk"
+	fi
+   if [ -f ${LOG}/$i.log ]; then
+      if (grep "^=======>" ${LOG}/$i.log|grep "succeeded" > /dev/null);then
+         BUILD="no"
+      else
+         BUILD="yes"
+      fi
+
+   fi
+   if [ "$BUILD" == "yes" ]; then
+      cd $i 
+      $PKGMK -i -kw 2>&1|tee ${LOG}/$i.log || exit 1
+      if ( ! grep "^=======>" ${LOG}/$i.log|grep "succeeded"  > /dev/null);then
+         exit 1
+      fi
+      cd ..
+   fi
+done
+

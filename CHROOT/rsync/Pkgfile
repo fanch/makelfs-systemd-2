@@ -1,0 +1,13 @@
+version=3.1.2
+source=(http://rsync.samba.org/ftp/rsync/rsync-$version.tar.gz)
+
+build()
+{
+cd rsync-$version
+./configure --prefix=/tools \
+--without-included-zlib \
+--disable-acl-support
+make
+make install
+}
+

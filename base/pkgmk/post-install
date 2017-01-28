@@ -1,0 +1,6 @@
+if [ -f /etc/pkgmk.conf.original ]; then
+        mv -v /etc/pkgmk.conf{,.new}
+        mv -v /etc/pkgmk.conf{.original,}
+        echo "Votre fichier /etc/pkgmk.conf.original a été restauré, veuillez le comparer avec /etc/pkgmk.conf.new"
+fi
+sed -i "s/pkg-repgen/pkgmk/" /etc/pkg-get.conf

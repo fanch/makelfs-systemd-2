@@ -1,0 +1,31 @@
+# Description: Freedesktop.org message bus system
+# URL: http://www.freedesktop.org/wiki/Software/dbus/
+# Packager: fanch at nutyx dot org
+# Depends on: expat systemd
+
+name=dbus
+version=1.10.14
+release=1
+source=(http://dbus.freedesktop.org/releases/dbus/$name-$version.tar.gz dbus.system-local.conf)
+              
+
+build() {
+	cd $name-$version
+	 ./configure --prefix=/usr                       \
+              --sysconfdir=/etc                   \
+              --localstatedir=/var                \
+              --disable-static                    \
+              --disable-doxygen-docs              \
+              --disable-xml-docs                  \
+              --docdir=/usr/share/doc/$nma-$version \
+              --with-console-auth-dir=/run/console
+	make
+	make DESTDIR=$PKG install
+mv -v $PKG/usr/lib/libdbus-1.so.* $PKG/lib
+ln -sfv ../../lib/$(readlink /usr/lib/libdbus-1.so) $PKG/usr/lib/libdbus-1.so	
+ln -sfv /etc/machine-id $PKG/var/lib/dbus
+chown -v root:messagebus $PKG/usr/libexec/dbus-daemon-launch-helper
+chmod -v      4750       $PKG/usr/libexec/dbus-daemon-launch-helper
+mkdir -p $PKG/etc/dbus-1
+mv ../dbus.system-local.conf $PKG/etc/dbus-1/session-local.conf
+}

@@ -1,0 +1,38 @@
+# Description: Library that can create and read several streaming archive formats.
+# URL: http://people.freebsd.org/~kientzle/libarchive
+# Packager: fanch at gmail dot com
+
+name=libarchive
+version=3.2.1
+release=1
+
+source=(http://www.libarchive.org/downloads/libarchive-$version.tar.gz)
+
+build() {
+cd $name-$version
+
+./configure --prefix=/usr \
+--mandir=/usr/share/man \
+--bindir=/bin \
+--without-xml2 \
+--infodir=/usr/share/info 
+make
+make DESTDIR=$PKG install
+
+mkdir $PKG/lib
+
+mv $PKG/usr/lib/libarchive.so.13.2.1 \
+$PKG/lib/
+for LIB in libarchive.so{,.13}
+        do
+                ln -sv libarchive.so.13.2.1 $PKG/lib/$LIB
+                rm $PKG/usr/lib/$LIB
+                ln -sv ../../lib/libarchive.so.13.2.1 \
+                $PKG/usr/lib/$LIB
+done
+
+ln -sv ../../lib/libarchive.so.13.2.1 \
+$PKG/usr/lib/libarchive.so.13.2.1
+
+}
+

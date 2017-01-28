@@ -1,0 +1,38 @@
+SCRIPT_VERSION="sekong.5"
+SRC=/tmp/work
+WDIR=$SRC/nutyx-initrd
+if [ ! -d $SRC ]; then 
+	mkdir -p $SRC
+fi
+tar -C $SRC -xf /boot/nutyx-initrd.* || exit 1
+cp /root/bin/install-${SCRIPT_VERSION}.ash \
+$WDIR/rootfs/install/
+for i in $WDIR/rootfs/install/setup-install \
+         $WDIR/rootfs/install/setup-mirroir
+do
+        sed -i "s|#INSTALL#|install-$SCRIPT_VERSION.ash|" $i || exit 1
+done
+
+for i in setup-grub functions setup-main main.txt
+do
+        sed -i "s|#VERSION#|$SCRIPT_VERSION|" $WDIR/rootfs/install/$i || exit 1
+done
+
+# Copie des modules kernels
+echo "Copie des modules kernels"
+mkdir -p $WDIR/rootfs/lib/modules
+cp -a /lib/modules/* \
+$WDIR/rootfs/lib/modules/
+
+echo "Copie des firmwares"
+cp -a /lib/firmware \
+$WDIR/rootfs/lib/
+
+# Copie du script d'install
+cp /root/bin/install-${SCRIPT_VERSION}.ash $WDIR/rootfs/install/
+
+# Création de l'initrd
+echo "Création de l'initrd"
+sh $WDIR/script/mkinitrd $WDIR
+cp $WDIR/iso/isolinux/initrd /boot/nutyx-initrd
+rm -r $SRC

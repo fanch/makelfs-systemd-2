@@ -1,0 +1,11 @@
+name=pkg-get
+version=0.4.96
+release=1
+source=(http://nutyx.meticul.eu/files/$name-$version.tar.gz)
+
+build() {
+	cd $name-$version
+	make
+	make install
+}
+

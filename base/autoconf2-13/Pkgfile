@@ -1,0 +1,24 @@
+# Description: A GNU tool for automatically configuring source code (Legacy 2.1x version).
+# URL: http://www.gnu.org/software/autoconf/
+# Packager: fanch at nutyx dot org
+
+name=autoconf2-13
+basename=autoconf2.13
+version=2.13
+release=1
+
+source=(http://ftpmirror.gnu.org/autoconf/autoconf-$version.tar.gz
+ http://www.linuxfromscratch.org/patches/blfs/svn/autoconf-2.13-consolidated_fixes-1.patch)
+
+build() {
+  cd autoconf-$version
+  patch -Np1 -i ../autoconf-2.13-consolidated_fixes-1.patch
+  mv -v autoconf.texi autoconf213.texi                      
+  rm -v autoconf.info                                       
+  ./configure --prefix=/usr  \
+              --program-suffix=-2.13
+  make
+  make prefix=$PKG/usr infodir=$PKG/usr/share/info install
+  install -v -m644 autoconf213.info $PKG/usr/share/info 
+  install-info --info-dir=/usr/share/info autoconf213.info
+}

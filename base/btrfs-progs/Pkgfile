@@ -1,0 +1,19 @@
+# Description: Btrfs filesystem utilities
+# URL: http://btrfs.wiki.kernel.org/
+# Packagers: fanch at nutyx dot org
+
+name=btrfs-progs
+version=4.8.1
+release=1
+
+source=(https://www.kernel.org/pub/linux/kernel/people/kdave/$name/$name-v$version.tar.xz)
+
+build(){
+cd $name-v$version
+sed -i '1,106 s/\.gz//g' Documentation/Makefile.in
+./configure --prefix=/usr libdir=/lib \
+bindir=/sbin \
+--disable-documentation
+make
+make DESTDIR=$PKG install
+}
