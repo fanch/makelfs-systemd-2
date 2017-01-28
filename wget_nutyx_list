@@ -90,7 +90,7 @@ ftp://atrey.karlin.mff.cuni.cz/pub/linux/pci/pciutils-3.5.1.tar.gz
 http://www.oberhumer.com/opensource/lzo/download/lzo-2.09.tar.gz
 ftp://sources.redhat.com/pub/lvm2/releases/LVM2.2.02.164.tgz
 http://ftp.gnu.org/gnu/wget/wget-1.18.tar.xz
-http://rsync.samba.org/ftp/rsync/rsync-3.1.2.tar.gz
+https://rsync.samba.org/ftp/rsync/rsync-3.1.2.tar.gz
 http://www.nico.schottelius.org/software/gpm/archives/gpm-1.20.7.tar.bz2
 http://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-7.2p2.tar.gz
 http://downloads.nutyx.org/files/patchs/openssh-server/service-saravane-01.patch
