@@ -25,6 +25,14 @@ cd ../glibc-$version
 
 patch -Np1 -i ../glibc-2.24-fhs-1.patch
 
+case $(uname -m) in
+    x86) ln -s ld-linux.so.2 /lib/ld-lsb.so.3
+    ;;
+    x86_64) ln -s ../lib/ld-linux-x86-64.so.2 /lib64
+            ln -s ../lib/ld-linux-x86-64.so.2 /lib64/ld-lsb-x86-64.so.3
+    ;;
+esac
+
 mkdir -v ../glibc-build
 cd ../glibc-build
 
