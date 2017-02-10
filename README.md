@@ -152,12 +152,13 @@ nutyx 7.10-1
 rm pkgmk.conf
 
 10. On monte les différents dossiers
-mount -v --bind  /dev /$LFS/dev
-mount -vt devpts devpts $LFS/dev/pts
-mount -vt tmpfs shm $LFS/dev/shm
+mount -v --bind /dev $LFS/dev
+mount -vt devpts devpts $LFS/dev/pts -o gid=5,mode=620
 mount -vt proc proc $LFS/proc
 mount -vt sysfs sysfs $LFS/sys
-mount --bind /sources  $LFS/sources
+mount -vt tmpfs tmpfs $LFS/run
+if [ -h /dev/shm ]; then mkdir -pv $LFS/$(readlink $LFS/dev/shm);fi
+chmod 1777 /dev/shm
 
 11. On copie resolv.conf
 cp -v /etc/resolv.conf $LFS/etc
@@ -192,8 +193,8 @@ pass
 
 17. La compilation se termine par le kernel :
 /tools/bin/pkgmk: line 99: pkg-get-version: command not found
-=======> Building '/srv/NuTyX/release/headers#4.7.2-1.pkg.tar.xz'.
-bsdtar -p -o -C /tmp/work/src -xf /sources/linux-4.7.2.tar.xz
+=======> Building '/srv/NuTyX/release/headers#4.9.9-1.pkg.tar.xz'.
+bsdtar -p -o -C /tmp/work/src -xf /sources/linux-4.9.9.tar.xz
 ...
 
 
