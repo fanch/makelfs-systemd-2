@@ -4,7 +4,7 @@
 kernelversion=4.9
 PKGMK_GROUPS=(devel man doc)
 name=glibc
-version=2.24
+version=2.25
 release=1
 
 source=(http://www.kernel.org/pub/linux/kernel/v4.x/linux-$kernelversion.tar.xz
@@ -23,7 +23,7 @@ cp -rv dest/include/* $PKG/usr/include
 
 cd ../glibc-$version
 
-patch -Np1 -i ../glibc-2.24-fhs-1.patch
+patch -Np1 -i ../glibc-2.25-fhs-1.patch
 
 case $(uname -m) in
     x86) ln -s ld-linux.so.2 /lib/ld-lsb.so.3
