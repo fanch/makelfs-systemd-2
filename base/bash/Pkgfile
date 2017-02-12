@@ -1,16 +1,17 @@
 # Description: The Bash package contains the Bourne-Again SHell.
 # Maintainers: Brian Fox,Chet Ramey and many more
-# Packager: tnut at nutyx dot org
+# Packager: fanch at nutyx dot org
 
 name=bash
 version=4.4
-release=4
+release=5
 
-source=(http://ftp.gnu.org/gnu/bash/bash-$version.tar.gz)
+source=(http://ftp.gnu.org/gnu/bash/bash-$version.tar.gz bash-4.4-upstream_fixes-1.patch)
 
 build()
 {
 cd bash-$version
+patch -Np1 -i ../bash-4.4-upstream_fixes-1.patch
 ./configure --prefix=/usr --bindir=/bin \
 --htmldir=/usr/share/doc/bash-$version --without-bash-malloc \
 --with-installed-readline
