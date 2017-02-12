@@ -1,9 +1,9 @@
 # Description: The Shadow package contains programs for handling passwords in a secure way.
 # URL: http://shadow.pld.org.pl/
 # Maintainer: pkg-shadow-devel@lists.alioth.debian.org
-# Packager: pierre at nutyx dot org
+# Packager: fanch at nutyx dot org
 name=shadow
-version=4.2.1
+version=4.4
 release=1
 
 source=( http://pkg-shadow.alioth.debian.org/releases/shadow-$version.tar.xz)
