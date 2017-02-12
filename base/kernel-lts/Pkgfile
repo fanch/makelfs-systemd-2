@@ -13,7 +13,7 @@ PKGMK_NO_STRIP="yes"
 name=kernel-lts
 alias=(linux-lts)
 
-version=4.4.42
+version=4.4.48
 _version=${version:0:3}
 
 release=1
