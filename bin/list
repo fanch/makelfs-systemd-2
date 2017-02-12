@@ -93,7 +93,6 @@ dhcpcd
 lz4
 prt-get
 pkgutils
-pkgmk
 pkg-get
 ports
 linux-firmware
