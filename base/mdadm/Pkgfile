@@ -1,16 +1,16 @@
 # Description: The mdadm package contains administration tools for software RAID.
 # URL: http://www.cse.unsw.edu.au/~neilb/source/mdadm/
-# Packager: pierre at nutyx dot org
+# Packager: fanch at nutyx dot org
 
 name=mdadm
-version=3.4
+version=4.0
 release=1
 
 source=(http://www.kernel.org/pub/linux/utils/raid/$name/$name-$version.tar.xz)
 
 build() {
 cd $name-$version
-    make CXFLAGS="$CFLAGS" all mdadm.static
+    make 
     make DESTDIR=$PKG install
-    install -m755 mdadm.static $PKG/sbin
 }
+
