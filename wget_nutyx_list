@@ -16,7 +16,7 @@ http://dev.gentoo.org/~blueness/eudev/eudev-3.2.1.tar.gz
  http://downloads.sourceforge.net/project/e2fsprogs/e2fsprogs/v1.43.4/e2fsprogs-1.43.4.tar.gz
 http://prdownloads.sourceforge.net/expat/expat-2.2.0.tar.bz2
 http://prdownloads.sourceforge.net/expect/expect5.45.tar.gz
-ftp://ftp.astron.com/pub/file/file-5.29.tar.gz
+ftp://ftp.astron.com/pub/file/file-5.30.tar.gz
 http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz
 https://github.com/westes/flex/releases/download/v2.6.3/flex-2.6.3.tar.gz
 http://ftp.gnu.org/gnu/gawk/gawk-4.1.4.tar.xz
