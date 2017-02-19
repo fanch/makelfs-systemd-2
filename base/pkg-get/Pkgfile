@@ -1,19 +1,17 @@
-# Description: Le gestionnaire de paquets binaires pour NuTyX léger et rapide
+# Description:  Package management tool for CRUX Linux
 # URL: http://www.nutyx.org
-# Maintainer: tnut at nutyx dot com
+# Maintainer: Jose V Beneyto, sepen at crux dot nu
 # Packager: tnut at nutyx dot com
-# Depends on: curl
+# Depends on: perl
 
 name=pkg-get
-version=0.4.96
-release=1
-source=(http://nutyx.meticul.eu/files/$name-$version.tar.gz)
+version=0.4.6
+release=2
+source=(http://crux.nu/files/distfiles/$name-$version.tar.gz)
 
 build() {
-	unset MAKEFLAGS
 	cd $name-$version
-	make clean
-	make
-	make DESTDIR=$PKG install
-	rm $PKG/etc/pkg-get.conf
+	# fixed mandir location
+	sed 's|${PREFIX}/man|${PREFIX}/share/man|g' -i Makefile
+	make PREFIX=$PKG/usr CFGDIR=$PKG/etc install
 }
