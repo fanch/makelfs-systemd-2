@@ -1,24 +1,24 @@
 # Description: The Man-DB package contains programs for finding and viewing man pages.
 # URL: http://savannah.nongnu.org/projects/man-db
 # Maintainer: Colin Watson cjwatson at debian dot org
-# Packagers: pierre at nutyx dot org, tnut at nutyx dot org
+# Packagers: fanch at nutyx dot org, tnut at nutyx dot org
 
 name=man-db
-version=2.7.6
+version=2.7.6.1
 release=1
-
 source=(http://savannah.nongnu.org/download/man-db/man-db-$version.tar.xz)
-run=(groff less)
 
 build()
 {
 cd man-db-$version
-PKG_CONFIG_PATH="/usr/lib/pkgconfig" ./configure --prefix=/usr \
---libexecdir=/usr/lib \
---docdir=/usr/share/doc/man-$version \
---sysconfdir=/etc --disable-setuid \
---with-browser=/usr/bin/lynx --with-vgrind=/usr/bin/vgrind \
---with-grap=/usr/bin/grap
+./configure --prefix=/usr                        \
+            --docdir=/usr/share/doc/$name-$version \
+            --sysconfdir=/etc                    \
+            --disable-setuid                     \
+            --enable-cache-owner=bin             \
+            --with-browser=/usr/bin/lynx         \
+            --with-vgrind=/usr/bin/vgrind        \
+            --with-grap=/usr/bin/grap
 
 make
 # Certains test fails
@@ -39,3 +39,4 @@ done
 EOF
 install -m755 convert-mans $PKG/usr/bin
 }
+
